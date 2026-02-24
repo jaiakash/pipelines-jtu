@@ -54,7 +54,15 @@ jobs:
           IMAGE="${IMAGE_REGISTRY}/${IMAGE_ORG}/${APP_NAME}"
           
           echo "Building sources from digests..."
-          SOURCES=$(printf "${IMAGE}@sha256:%s " *)
+          SOURCES=""
+          for digest in *; do
+            # Only accept filenames that look like a 64-character hexadecimal SHA-256 digest
+            if [[ "$digest" =~ ^[a-fA-F0-9]{64}$ ]]; then
+              SOURCES+="${IMAGE}@sha256:${digest} "
+            else
+              echo "Skipping invalid digest file: ${digest}" >&2
+            fi
+          done
           
           echo "Creating manifest for ${IMAGE}:${TARGET_IMAGE_TAG} with sources: ${SOURCES}"
           docker buildx imagetools create -t "${IMAGE}:${TARGET_IMAGE_TAG}" ${SOURCES}
