@@ -37,69 +37,101 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        include:
+        component:
           - image: kfp-api-server
             dockerfile: backend/Dockerfile
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-frontend
             dockerfile: frontend/Dockerfile
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-persistence-agent
             dockerfile: backend/Dockerfile.persistenceagent
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-scheduled-workflow-controller
             dockerfile: backend/Dockerfile.scheduledworkflow
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-viewer-crd-controller
             dockerfile: backend/Dockerfile.viewercontroller
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-visualization-server
             dockerfile: backend/Dockerfile.visualization
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-launcher
             dockerfile: backend/Dockerfile.launcher
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-driver
             dockerfile: backend/Dockerfile.driver
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-cache-deployer
             dockerfile: backend/src/cache/deployer/Dockerfile
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-cache-server
             dockerfile: backend/Dockerfile.cacheserver
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-metadata-writer
             dockerfile: backend/metadata_writer/Dockerfile
-            platforms: linux/amd64
             context: .
           - image: kfp-metadata-envoy
             dockerfile: third_party/metadata_envoy/Dockerfile
-            platforms: linux/amd64,linux/arm64
             context: .
           - image: kfp-inverse-proxy-agent
             dockerfile: proxy/Dockerfile
-            platforms: linux/amd64
             context: ./proxy
+        arch:
+          - name: amd64
+            runs-on: ubuntu-latest
+            platform: linux/amd64
+          - name: arm64
+            runs-on: ubuntu-24.04-arm
+            platform: linux/arm64
+        exclude:
+          - component:
+              image: kfp-metadata-writer
+            arch:
+              name: arm64
+          - component:
+              image: kfp-inverse-proxy-agent
+            arch:
+              name: arm64
     uses: ./.github/workflows/build-and-push.yml
     secrets: inherit
     with:
       src_branch: ${{ inputs.src_branch }}
       target_tag: ${{ inputs.target_tag }}
+      arch_tag: ${{ matrix.arch.name }}
       overwrite_imgs: ${{ inputs.overwrite_imgs }}
       set_latest: ${{ inputs.set_latest }}
       add_sha_tag: ${{ inputs.add_sha_tag }}
-      app_to_build: ${{ matrix.image }}
-      image_context: ${{ matrix.context }}
-      docker_file: ${{ matrix.dockerfile }}
-      platforms: ${{ matrix.platforms }}
+      app_to_build: ${{ matrix.component.image }}
+      image_context: ${{ matrix.component.context }}
+      docker_file: ${{ matrix.component.dockerfile }}
+      platforms: ${{ matrix.arch.platform }}
+      runs_on: ${{ matrix.arch.runs-on }}
       push: ${{ !inputs.dry_run }}
+
+  create-manifests:
+    needs: build-images-for-release
+    if: ${{ !inputs.dry_run }}
+    strategy:
+      fail-fast: true
+      matrix:
+        component:
+          - image: kfp-api-server
+          - image: kfp-frontend
+          - image: kfp-persistence-agent
+          - image: kfp-scheduled-workflow-controller
+          - image: kfp-viewer-crd-controller
+          - image: kfp-visualization-server
+          - image: kfp-launcher
+          - image: kfp-driver
+          - image: kfp-cache-deployer
+          - image: kfp-cache-server
+          - image: kfp-metadata-writer
+          - image: kfp-metadata-envoy
+          - image: kfp-inverse-proxy-agent
+    uses: ./.github/workflows/create-manifest.yml
+    secrets: inherit
+    with:
+      target_tag: ${{ inputs.target_tag }}
+      app_to_build: ${{ matrix.component.image }}
+      set_latest: ${{ inputs.set_latest }}
