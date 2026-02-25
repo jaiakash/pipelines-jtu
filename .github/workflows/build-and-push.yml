@@ -131,8 +131,6 @@ env:
   SET_LATEST: ${{ inputs.set_latest }}
   ADD_SHA_TAG: ${{ inputs.add_sha_tag }}
   CACHE_PATH: '/tmp/.buildx-cache'
-  BUILDX_BUILDER: 'poly-builder'
-  IP_AMR64_NODE: ${{ vars.IP_AMR64_NODE }}
 
 jobs:
   build-and-push-images:
