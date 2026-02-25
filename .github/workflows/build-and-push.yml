@@ -131,12 +131,10 @@ env:
   SET_LATEST: ${{ inputs.set_latest }}
   ADD_SHA_TAG: ${{ inputs.add_sha_tag }}
   CACHE_PATH: '/tmp/.buildx-cache'
-  BUILDX_BUILDER: 'poly-builder'
-  IP_AMR64_NODE: ${{ vars.IP_AMR64_NODE }}
 
 jobs:
   build-and-push-images:
-    continue-on-error: false
+    continue-on-error: true
     runs-on: ${{ inputs.runs_on }}
     permissions:
       contents: read
@@ -163,7 +161,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          buildkitd-flags: --debug
+          driver: docker-container
 
       - name: Check if image tag already exists
         id: check_tag
@@ -208,8 +206,6 @@ jobs:
           push: ${{ inputs.push }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_ORG }}/${{ inputs.app_to_build }},push-by-digest=true,name-canonical=true,push=${{ inputs.push }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             COMMIT_SHA=${{ steps.get_commit.outputs.sha }}
             COMMIT_HASH=${{ steps.get_commit.outputs.sha }}
