@@ -134,7 +134,7 @@ env:
 
 jobs:
   build-and-push-images:
-    continue-on-error: true
+    continue-on-error: false
     runs-on: ${{ inputs.runs_on }}
     permissions:
       contents: read

@@ -59,10 +59,10 @@ jobs:
 
         exclude:
           - image: { name: kfp-metadata-writer }
-            arch: { arch_name: amd64 }
+            arch: { arch_name: arm64 }
 
           - image: { name: kfp-inverse-proxy-agent }
-            arch: { arch_name: amd64 }
+            arch: { arch_name: arm64 }
 
     uses: ./.github/workflows/build-and-push.yml
     secrets: inherit
